@@ -1,0 +1,3 @@
+# Fixtures are real spratconvert output, and tests check their exact bytes and
+# positions: never convert their line endings (Windows checkouts would add \r).
+tests/fixtures/** -text

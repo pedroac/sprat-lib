@@ -390,7 +390,12 @@ static void check_everything_loads(void) {
 /* Every cut fails, except one that only drops trailing whitespace, and none leaks. */
 static void check_every_truncation(const char* label, const char* text, size_t size) {
     size_t content = size;
-    while (content > 0 && (text[content - 1] == '\n' || text[content - 1] == ' ')) --content;
+    /* The tokenizer's whitespace: a cut that drops only these still loads. */
+    while (content > 0) {
+        char c = text[content - 1];
+        if (c != ' ' && c != '\t' && c != '\r' && c != '\n') break;
+        --content;
+    }
     use_counting(0);
     for (size_t n = 0; n < size; ++n) {
         sprat_sheet* sheet = NULL;
@@ -401,6 +406,7 @@ static void check_every_truncation(const char* label, const char* text, size_t s
             sprat_sheet_free(sheet);
         } else {
             check_clean_failure(label, n, status, &error, sheet);
+            sprat_sheet_free(sheet); /* a wrong success is reported above, not as a leak */
         }
         if (g_counting.live != 0) FAIL_AT("%s cut at byte %zu leaked", label, n);
     }
