@@ -395,9 +395,11 @@ text.
 
 - spratconvert writes a `0,0` pivot when no pivot marker applies, so a
   real pivot at the origin looks the same as no pivot at all.
-- Numbers are parsed without `strtod`, so the C locale has no effect. Every
-  value sprat-cli writes is parsed exactly. Values with more than 19
-  significant digits or extreme exponents may be off by a few ULPs.
+- A number with more than 15 significant digits, or an exponent past ±22, may
+  land an ULP or so away from what `strtod` gives. This doesn't affect files
+  from sprat-cli: it rounds `scale` and `collision_atlas_scale` to 8
+  significant digits, and those parse exactly. (sprat parses numbers itself,
+  rather than with `strtod`, so the C locale has no effect.)
 - `sprat_sheet_load_file()` takes a UTF-8 path. On Windows it opens it with
   `_wfopen`, falling back to `fopen` for a path that is not valid UTF-8. To read
   through your engine's file system (SDL's `SDL_LoadFile`, raylib's
