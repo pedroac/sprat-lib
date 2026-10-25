@@ -1,0 +1,4 @@
+- marker "pivot" point 8,16
+path "hero/run_01.png"
+- marker "pivot" point 4,30
+- marker "feet" rectangle 0,28 16,4

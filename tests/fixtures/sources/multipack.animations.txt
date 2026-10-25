@@ -1,0 +1,6 @@
+fps 12
+animation "run" 10
+- frame "hero/run_01.png"
+- frame "hero/run_02.png"
+- frame "hero/run_03.png"
+animation "run-left" alias "run" flip h

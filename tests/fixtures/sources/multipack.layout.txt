@@ -1,0 +1,10 @@
+scale 0.5
+extrude 1
+multipack true
+rotation ccw
+atlas 64,64
+sprite "hero/run_01.png" 0,0 16,32 2,4 6,0
+sprite "hero/run_02.png" 16,0 32,16 0,0 0,0 rotated
+atlas 32,32
+sprite "ui/panel.9.png" 0,0 24,24 slice=4,4,4,4,repeat,stretch
+alias "hero/run_03.png" "hero/run_01.png" 1,2 3,4
