@@ -87,6 +87,9 @@ static void use_c_library(void) {
 #define HEADER_FMT "sprat-raw 1\nsheet 1 0 0 0 1 %d %d 0 0 %d %d 0: 0:\natlas 8 8 0: 0: 0:\n"
 #define HEADER(sprites, anims) \
     "sprat-raw 1\nsheet 1 0 0 0 1 " #sprites " " #anims " ~ 0: 0:\natlas 8 8 0: 0: 0:\n"
+/* The same in version 2, whose anim records have a LOOP after FLIP. */
+#define HEADER_V2(sprites, anims) \
+    "sprat-raw 2\nsheet 1 0 0 0 1 " #sprites " " #anims " ~ 0: 0:\natlas 8 8 0: 0: 0:\n"
 /* A sprite record on atlas 0; `rect` and `tail` (MARKERS NAME PATH ALIAS_OF)
  * replace parts of it. Every other value is 0. */
 #define SPRITE_AT(rect, tail) "sprite 0 " rect " 0 0 0 0 0 0 0 0 0 0 0 0 0 0 " tail "\n"
@@ -124,6 +127,8 @@ static const char* with_totals(const char* text) {
     const char* mark = strstr(text, " ~ ");
     if (mark == NULL) return text;
     size_t markers = 0, vertices = 0, frames = 0, string_bytes = 0;
+    /* FRAMES is an anim record's 4th value, or its 5th from version 2 on (after LOOP). */
+    const size_t frames_index = strncmp(text, "sprat-raw 1", 11) == 0 ? 4 : 5;
     const char* p = text;
     size_t index = 0; /* of the token within its record */
     bool in_marker = false;
@@ -146,7 +151,7 @@ static const char* with_totals(const char* text) {
         } else {
             ++index;
             if (in_marker && index == 7) vertices += (size_t)strtoul(tok, NULL, 10);
-            if (in_anim && index == 4) frames += (size_t)strtoul(tok, NULL, 10);
+            if (in_anim && index == frames_index) frames += (size_t)strtoul(tok, NULL, 10);
         }
     }
     int n = snprintf(out, sizeof(out), "%.*s %zu %zu %zu %zu%s", (int)(mark - text), text,

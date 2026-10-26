@@ -210,6 +210,14 @@ enum {
     SPRAT_FLIP_V = 1u << 1
 };
 
+/* How an animation plays, as bits; 0 repeats it forward. SPRAT_LOOP_ONCE stops
+ * after one pass: on the last frame, or with SPRAT_LOOP_PINGPONG on the first.
+ * SPRAT_LOOP_PINGPONG plays forward then backward. */
+enum {
+    SPRAT_LOOP_ONCE = 1u << 0,
+    SPRAT_LOOP_PINGPONG = 1u << 1
+};
+
 typedef struct sprat_animation {
     const char* name;
     int fps; /* 1..SPRAT_FPS_LIMIT */
@@ -223,6 +231,9 @@ typedef struct sprat_animation {
     /* SPRAT_FLIP_* bits. For an alias, its own flip combined (XOR) with its
      * source's, so an alias of a mirrored animation mirrors it again. */
     unsigned flip;
+    /* SPRAT_LOOP_* bits; an alias's are its source's. 0 for sprat-raw 1 files,
+     * which carry no loop mode. */
+    unsigned loop;
 } sprat_animation;
 
 typedef struct sprat_sheet {

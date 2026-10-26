@@ -117,6 +117,7 @@ static void test_fixture_animations(void) {
     CHECK_STR(run->name, "run");
     CHECK_INT(run->fps, 10);
     CHECK_INT(run->flip, 0);
+    CHECK_INT(run->loop, SPRAT_LOOP_PINGPONG);
     CHECK_NULL(run->alias_of);
     CHECK_SIZE(run->frame_count, 3);
     if (run->frame_count == 3) {
@@ -131,6 +132,7 @@ static void test_fixture_animations(void) {
     CHECK(left->alias_of == run->name);
     CHECK_INT(left->flip, SPRAT_FLIP_H);
     CHECK_INT(left->fps, 10);
+    CHECK_INT(left->loop, SPRAT_LOOP_PINGPONG);
     CHECK_SIZE(left->frame_count, 3);
     CHECK(left->frames == run->frames);
     sprat_sheet_free(sheet);
@@ -390,6 +392,36 @@ static void test_animations(void) {
     sprat_sheet_free(sheet);
 }
 
+/* Version 2 gives each animation a LOOP; aliases play the way their source does,
+ * whatever LOOP they carry themselves. */
+static void test_animation_loops(void) {
+    sprat_sheet* sheet = load_ok(
+        HEADER_V2(1, 6) SPRITE
+        "anim 8 0 0 -1 1 0 4:loop\n"
+        "anim 8 0 1 -1 1 0 4:once\n"
+        "anim 8 1 2 -1 1 0 2:pp\n"
+        "anim 8 0 3 -1 1 0 3:opp\n"
+        "anim 8 0 0 5 0 2:a1\n"
+        "anim 8 0 1 2 0 2:a5\n");
+    if (sheet == NULL) return;
+    CHECK_INT(sheet->animations[0].loop, 0);
+    CHECK_INT(sheet->animations[1].loop, SPRAT_LOOP_ONCE);
+    CHECK_INT(sheet->animations[2].loop, SPRAT_LOOP_PINGPONG);
+    CHECK_INT(sheet->animations[2].flip, SPRAT_FLIP_H);
+    CHECK_INT(sheet->animations[3].loop, SPRAT_LOOP_ONCE | SPRAT_LOOP_PINGPONG);
+    /* a1 -> a5 -> pp */
+    CHECK_INT(sheet->animations[4].loop, SPRAT_LOOP_PINGPONG);
+    CHECK_INT(sheet->animations[5].loop, SPRAT_LOOP_PINGPONG);
+    sprat_sheet_free(sheet);
+
+    /* Version 1 files carry no LOOP, and play as loop. */
+    sheet = load_ok(HEADER(1, 1) SPRITE "anim 8 0 -1 1 0 1:r\n");
+    if (sheet == NULL) return;
+    CHECK_INT(sheet->animations[0].loop, 0);
+    CHECK_SIZE(sheet->animations[0].frame_count, 1);
+    sprat_sheet_free(sheet);
+}
+
 /* ---- Sprite aliases ----------------------------------------------------- */
 
 static void test_sprite_aliases(void) {
@@ -630,6 +662,7 @@ int main(void) {
     RUN(test_slices);
     RUN(test_markers);
     RUN(test_animations);
+    RUN(test_animation_loops);
     RUN(test_sprite_aliases);
     RUN(test_sprite_aliases_on_the_heap);
     RUN(test_totals_are_checked_first);

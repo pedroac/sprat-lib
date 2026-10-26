@@ -27,8 +27,10 @@ static const error_case k_cases[] = {
       "not a sprat raw file: expected \"sprat-raw\", found \"{\\\"atlases\\\":[]}\""),
     E("\n\n  sprat-ra 1", SPRAT_ERR_SYNTAX, 3, 3,
       "not a sprat raw file: expected \"sprat-raw\", found \"sprat-ra\""),
-    E("sprat-raw 2\n", SPRAT_ERR_SCHEMA, 1, 11,
-      "sprat-raw.version: unsupported version 2 (this library reads version 1)"),
+    E("sprat-raw 3\n", SPRAT_ERR_SCHEMA, 1, 11,
+      "sprat-raw.version: unsupported version 3 (this library reads versions 1..2)"),
+    E("sprat-raw 0\n", SPRAT_ERR_SCHEMA, 1, 11,
+      "sprat-raw.version: unsupported version 0 (this library reads versions 1..2)"),
     E("sprat-raw one\n", SPRAT_ERR_SYNTAX, 1, 11,
       "sprat-raw.version: expected an integer, found \"one\""),
     E("sprat-raw", SPRAT_ERR_SYNTAX, 1, 10,
@@ -205,6 +207,11 @@ static const error_case k_cases[] = {
       "animations[0].fps: 2147483647 is out of range 1..100 (SPRAT_FPS_LIMIT)"),
     E(HEADER(0, 1) "anim 8 4 -1 0 1:r\n", SPRAT_ERR_SCHEMA, 4, 8,
       "animations[0].flip: unknown value 4 (expected 0..3)"),
+    E(HEADER_V2(0, 1) "anim 8 0 4 -1 0 1:r\n", SPRAT_ERR_SCHEMA, 4, 10,
+      "animations[0].loop: unknown value 4 (expected 0..3)"),
+    /* A version 1 record read as version 2 is missing its LOOP. */
+    E(HEADER_V2(0, 1) "anim 8 0 -1 0 1:r\n", SPRAT_ERR_SCHEMA, 4, 10,
+      "animations[0].loop: unknown value -1 (expected 0..3)"),
     E(HEADER(0, 1) "anim 8 0 none 0 1:r\n", SPRAT_ERR_SYNTAX, 4, 10,
       "animations[0].alias_of: expected an integer, found \"none\""),
     E(HEADER(1, 1) SPRITE "anim 8 0 -1 1 1 1:r\n", SPRAT_ERR_SCHEMA, 5, 15,
@@ -443,6 +450,10 @@ static const char* const k_marker_fields[] = {
     "type", "x", "y", "radius", "w", "h", "vertex_count", "*", "name", NULL,
 };
 static const char* const k_anim_fields[] = {
+    "fps", "flip", "loop", "alias_of", "frame_count", "*", "name", NULL,
+};
+/* Version 1 anim records have no loop. */
+static const char* const k_anim_fields_v1[] = {
     "fps", "flip", "alias_of", "frame_count", "*", "name", NULL,
 };
 
@@ -463,6 +474,7 @@ static size_t name_tokens(const char* text, token* tokens, size_t capacity) {
     size_t field = 0;
     char record[48] = "";
     size_t atlas = 0, sprite = 0, marker = 0, anim = 0;
+    const char* const* anim_fields = k_anim_fields;
     size_t items = 0;     /* still to come for the current "*" */
     size_t item = 0;      /* index of the next one */
     bool vertex_y = false;
@@ -490,6 +502,7 @@ static size_t name_tokens(const char* text, token* tokens, size_t capacity) {
             fields = NULL;
         } else if (fields == NULL && count == 2) {
             snprintf(t->name, sizeof(t->name), "sprat-raw.version: ");
+            if (len == 1 && tok[0] == '1') anim_fields = k_anim_fields_v1;
         } else if (len == 5 && strncmp(tok, "sheet", 5) == 0) {
             snprintf(record, sizeof(record), "sheet");
             snprintf(t->name, sizeof(t->name), "sheet: ");
@@ -514,7 +527,7 @@ static size_t name_tokens(const char* text, token* tokens, size_t capacity) {
         } else if (len == 4 && strncmp(tok, "anim", 4) == 0) {
             snprintf(record, sizeof(record), "animations[%zu]", anim++);
             snprintf(t->name, sizeof(t->name), "%s: ", record);
-            fields = k_anim_fields;
+            fields = anim_fields;
             field = 0;
         } else if (fields != NULL && strcmp(fields[field], "*") == 0 && items > 0) {
             if (fields == k_marker_fields) {

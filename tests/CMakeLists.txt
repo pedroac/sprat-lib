@@ -33,7 +33,7 @@ sprat_add_test(test_drawing)
 if(TARGET sprat-dump)
     add_test(NAME sprat_dump COMMAND sprat-dump ${CMAKE_CURRENT_SOURCE_DIR}/fixtures/multipack.sprat)
     set_tests_properties(sprat_dump PROPERTIES PASS_REGULAR_EXPRESSION
-        "sprite 3: run_03 \\[atlas 0\\] 0,0 16x32 source 19x35 pivot 4,8 alias of hero/run_01.png")
+        "sprite 3: run_03 \\[atlas 0\\] 0,0 16x32 source 19x35 pivot 4,8 alias of hero/run_01.png.*animation run-left: 10 fps, 3 frames, pingpong \\(alias of run\\)")
     # Names with C1 controls and bidirectional marks are printed escaped, other UTF-8 as is.
     add_test(NAME sprat_dump_controls COMMAND sprat-dump ${CMAKE_CURRENT_SOURCE_DIR}/fixtures/controls.sprat)
     set_tests_properties(sprat_dump_controls PROPERTIES PASS_REGULAR_EXPRESSION

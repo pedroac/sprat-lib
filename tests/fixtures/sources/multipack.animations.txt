@@ -1,5 +1,5 @@
 fps 12
-animation "run" 10
+animation "run" 10 pingpong
 - frame "hero/run_01.png"
 - frame "hero/run_02.png"
 - frame "hero/run_03.png"

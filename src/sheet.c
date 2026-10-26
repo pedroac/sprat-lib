@@ -24,7 +24,10 @@
 #define SPRAT_VERSION_STRING "unknown"
 #endif
 
-#define SPRAT_RAW_VERSION 1
+/* Versions of the raw format this library reads. Version 2 added each animation's
+ * LOOP; version 1 files load with loop 0, which is how they played. */
+#define SPRAT_RAW_MIN_VERSION 1
+#define SPRAT_RAW_VERSION 2
 
 /* Largest file length sprat_sheet_load_file() sizes its buffer from up front
  * (64 MiB, far beyond any real sheet); longer files are read in growing chunks. */
@@ -53,6 +56,7 @@ typedef struct loader {
     sprat_error* error;
     const sprat_memory* memory;
     totals declared;
+    int version;       /* of the raw format */
     size_t sheet_line; /* input offset of the sheet record, for errors about its totals */
     /* The unused rest of each section; records take their slices from the front.
      * Every one must be used up exactly by the end of the file. */
@@ -560,16 +564,20 @@ enum alias_state { ALIAS_UNSEEN, ALIAS_WALKING, ALIAS_RESOLVED };
 static bool load_animation(loader* l, const where* at, size_t sprite_count,
                            sprat_animation* a, animation_alias* alias) {
     int flip;
+    int loop = 0;
     size_t count;
     if (!read_tag(l, at, "anim")
         || !read_in_range(l, at, "fps", 1, SPRAT_FPS_LIMIT, &a->fps)
         || !read_enum(l, at, "flip", (int)(SPRAT_FLIP_H | SPRAT_FLIP_V) + 1, &flip)
+        || (l->version >= 2
+            && !read_enum(l, at, "loop", (int)(SPRAT_LOOP_ONCE | SPRAT_LOOP_PINGPONG) + 1, &loop))
         || !read_int(l, at, "alias_of", &alias->source)) {
         return false;
     }
     alias->source_pos = l->in->token_start;
     if (!read_count(l, at, "frame_count", &count)) return false;
     a->flip = (unsigned)flip;
+    a->loop = (unsigned)loop;
     if (alias->source != -1 && count > 0) {
         where field = at_field(at, "frame_count");
         return schema_error(l, &field, l->in->token_start,
@@ -602,9 +610,9 @@ static bool load_animation(loader* l, const where* at, size_t sprite_count,
     return read_string(l, at, "name", &a->name);
 }
 
-/* Points every alias animation at its source's name, fps, frames and flip, following
- * chains of aliases. Each walk marks the aliases it passes as walking, stops at a
- * regular animation or an already resolved alias, then copies that one's fps and
+/* Points every alias animation at its source's name, fps, loop, frames and flip,
+ * following chains of aliases. Each walk marks the aliases it passes as walking, stops at
+ * a regular animation or an already resolved alias, then copies that one's fps, loop and
  * frames back along the chain and marks it resolved. Every alias is walked at
  * most twice, so long chains in a hostile file stay linear; reaching an alias
  * still marked walking means a cycle. */
@@ -637,7 +645,7 @@ static bool resolve_animation_aliases(loader* l, sprat_animation* anims,
             aliases[end].state = ALIAS_WALKING;
             end = (size_t)aliases[end].source;
         }
-        /* anims[end] is a regular animation or a resolved alias: its fps,
+        /* anims[end] is a regular animation or a resolved alias: its fps, loop,
          * frames and flip are final. An alias's flip combines with its
          * source's, so an alias of a mirrored animation mirrors it again:
          * each alias gets the XOR of its own flip and every flip after it. */
@@ -648,6 +656,7 @@ static bool resolve_animation_aliases(loader* l, sprat_animation* anims,
             anims[a].flip = after ^ anims[end].flip;
             after ^= own;
             anims[a].fps = anims[end].fps;
+            anims[a].loop = anims[end].loop;
             anims[a].frames = anims[end].frames;
             anims[a].frame_count = anims[end].frame_count;
             aliases[a].state = ALIAS_RESOLVED;
@@ -667,6 +676,7 @@ static bool resolve_animation_aliases(loader* l, sprat_animation* anims,
 #define MIN_SPRITE_BYTES ((size_t)7 + 23 * 2)
 #define MIN_MARKER_BYTES ((size_t)7 + 8 * 2)
 #define MIN_VERTEX_BYTES ((size_t)2 * 2)
+/* Version 1 has one value fewer (no LOOP), so this stays a lower bound for both. */
 #define MIN_ANIM_BYTES ((size_t)5 + 5 * 2)
 #define MIN_FRAME_BYTES ((size_t)2)
 #define MIN_HEADER_STRING_BYTES ((size_t)2 * 2)
@@ -700,12 +710,13 @@ static bool load_header(loader* l, sprat_sheet* sheet, totals* t) {
         return false;
     }
     if (!read_int(l, &k_format, "version", &version)) return false;
-    if (version != SPRAT_RAW_VERSION) {
+    if (version < SPRAT_RAW_MIN_VERSION || version > SPRAT_RAW_VERSION) {
         where field = at_field(&k_format, "version");
         return schema_error(l, &field, l->in->token_start,
-                            "unsupported version %d (this library reads version %d)", version,
-                            SPRAT_RAW_VERSION);
+                            "unsupported version %d (this library reads versions %d..%d)",
+                            version, SPRAT_RAW_MIN_VERSION, SPRAT_RAW_VERSION);
     }
+    l->version = version;
     int string_bytes;
     if (!read_tag(l, &k_sheet, "sheet")) return false;
     l->sheet_line = l->in->token_start;

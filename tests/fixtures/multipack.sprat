@@ -1,4 +1,4 @@
-sprat-raw 1
+sprat-raw 2
 sheet 0.5 1 1 0 2 4 2 2 0 3 160 7:n_0.png 0:
 atlas 64 64 11:atlas_0.png 7:n_0.png 0:
 atlas 32 32 11:atlas_1.png 7:n_1.png 0:
@@ -8,5 +8,5 @@ marker 2 0 14 0 8 2 0 4:feet
 sprite 0 16 0 32 16 270 0 0 0 0 4 8 0 0 0 0 0 0 0 0 6:run_02 15:hero/run_02.png 0:
 sprite 1 0 0 24 24 0 0 0 0 0 4 8 1 2 2 2 2 1 0 0 5:panel 14:ui/panel.9.png 0:
 sprite 0 0 0 16 32 0 1 1 2 2 4 8 0 0 0 0 0 0 0 0 6:run_03 15:hero/run_03.png 15:hero/run_01.png
-anim 10 0 -1 3 0 1 3 3:run
-anim 12 1 0 0 8:run-left
+anim 10 0 2 -1 3 0 1 3 3:run
+anim 12 1 2 0 0 8:run-left

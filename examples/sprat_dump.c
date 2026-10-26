@@ -19,6 +19,15 @@ static void print_text(const char* text) {
     free(escaped);
 }
 
+static const char* loop_name(unsigned loop) {
+    switch (loop) {
+    case SPRAT_LOOP_ONCE: return "once";
+    case SPRAT_LOOP_PINGPONG: return "pingpong";
+    case SPRAT_LOOP_ONCE | SPRAT_LOOP_PINGPONG: return "once-pingpong";
+    default: return "loop";
+    }
+}
+
 static const char* marker_type_name(sprat_marker_type type) {
     switch (type) {
     case SPRAT_MARKER_POINT: return "point";
@@ -81,7 +90,7 @@ int main(int argc, char** argv) {
         const sprat_animation* a = &sheet->animations[i];
         printf("animation ");
         print_text(a->name);
-        printf(": %d fps, %zu frames", a->fps, a->frame_count);
+        printf(": %d fps, %zu frames, %s", a->fps, a->frame_count, loop_name(a->loop));
         if (a->alias_of != NULL) {
             printf(" (alias of ");
             print_text(a->alias_of);

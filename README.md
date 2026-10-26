@@ -86,9 +86,14 @@ applied.
 - **Aliases**: a deduplicated sprite has `alias_of` set to its canonical path
   and shares that sprite's atlas region, but keeps its own trim.
 - **Animations** list sprite indexes in play order. An alias animation (`alias_of`
-  set) already has its source's `fps` and `frames` filled in. Its `flip` bits
+  set) already has its source's `fps`, `loop` and `frames` filled in. Its `flip` bits
   combine (XOR) its own flip with its source's, so an alias of a mirrored
   animation mirrors it again, along chains of aliases too.
+- **Loop modes**: `loop` is 0 for an animation that repeats forward. With
+  `SPRAT_LOOP_PINGPONG` it plays forward then backward; with `SPRAT_LOOP_ONCE` it
+  stops after one pass, on the last frame, or on the first with ping-pong too.
+  The frames are listed once either way, so the player walks them back itself.
+  Sheets in the version 1 format have no loop modes and load with `loop` 0.
 
 ## Lifetime and binding names
 
@@ -347,8 +352,9 @@ value a space-separated token, and strings written as `<UTF-8 byte count>:<bytes
 so names and paths may contain spaces. Each count comes before the records it
 counts, and the `sheet` line also declares the file's totals: markers, polygon
 vertices, animation frames and string bytes. The loader rejects a file whose
-records don't match them exactly. The first line, `sprat-raw 1`, carries the
-format version; the loader rejects other versions with `SPRAT_ERR_SCHEMA`.
+records don't match them exactly. The first line, `sprat-raw 2`, carries the
+format version. The loader reads versions 1 and 2 (version 2 added each animation's
+loop mode) and rejects others with `SPRAT_ERR_SCHEMA`.
 
 ## Memory
 
