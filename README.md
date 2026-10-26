@@ -293,6 +293,7 @@ Messages quote text from the file safely: control characters, invalid bytes,
 C1 controls such as U+009B and bidirectional marks and overrides such as
 U+061C and U+202E are escaped (`\x1B`, `\u202E`), so a hostile sheet cannot
 slip terminal escape sequences or reordered text into your logs.
+`sprat_escape()` escapes the same way, for the names you print yourself.
 
 The loader validates everything code using a sheet would otherwise have to
 check, so a loaded sheet can be used without further checks:
@@ -324,6 +325,19 @@ When a sheet comes from an untrusted source, check each atlas or image path with
 `..` component, drive, colon or control character, and nothing Windows would
 reinterpret (a component of only dots and spaces, or a device name such as
 `CON`, `nul.png` or `COM¹.png`, with a superscript digit).
+
+Names and paths are kept as written too. Before printing or logging them, pass
+them through `sprat_escape()`, which escapes what the error messages escape
+(adding no quotes). It works like `snprintf`: call it with a `NULL` buffer to
+learn the length, or give it a fixed buffer and compare the result with its size:
+
+```c
+char name[128];
+if (sprat_escape(name, sizeof(name), sprite->name) >= sizeof(name)) {
+    /* cut short, at a character boundary */
+}
+printf("sprite %s\n", name);
+```
 
 ## File format
 
