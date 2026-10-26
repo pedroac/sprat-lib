@@ -307,6 +307,17 @@ SPRAT_API sprat_size sprat_sprite_source_size(const sprat_sprite* sprite);
  * sheet comes from an untrusted source. */
 SPRAT_API bool sprat_path_is_safe(const char* path);
 
+/* Writes `text` with everything that could steer a terminal or reorder a line
+ * escaped, for printing or logging names and paths from an untrusted sheet:
+ * control characters and bytes that are not UTF-8 as \xNN (a newline as \n),
+ * the C1 controls and Unicode's Bidi_Control set as \uNNNN, and the backslash
+ * as \\. Other UTF-8 is copied as is, and no quotes are added.
+ * Like snprintf, it writes at most `size` bytes, NUL included, and returns the
+ * length of the whole escaped text, so a result >= size means it was cut. It
+ * never cuts an escape or a character in half. `out` may be NULL when `size`
+ * is 0, and a NULL `text` is empty. */
+SPRAT_API size_t sprat_escape(char* out, size_t size, const char* text);
+
 /* ---- Binding names ---------------------------------------------------- */
 
 /* Resolves the names a program needs to indexes, once, after loading:

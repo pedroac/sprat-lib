@@ -30,7 +30,8 @@ A breaking change to the format bumps the `sprat-raw` version on its first line.
 - `src/error.c`: filling in a `sprat_error`, shared by the loader and the binder.
 - `src/bind.c`: `sprat_sheet_bind()`, names to indexes with messages that suggest fixes.
 - `src/reader.c`: tokenizer for the raw format (integers, numbers, length-prefixed
-  UTF-8 strings copied into the sheet's string pool) with line/column errors.
+  UTF-8 strings copied into the sheet's string pool) with line/column errors, and
+  `sprat_escape()`, which also quotes text in error messages.
 - `src/sheet.c`: maps raw records onto the model, plus the loaders and queries.
 - `tests/`: C tests registered with CTest. `tests/fixtures/` holds real spratconvert output.
   - `test_reader.c`: the tokenizer. `test_sheet.c`: what records become in the model.

@@ -6,33 +6,17 @@
 #include <sprat/sprat.h>
 
 #include <stdio.h>
+#include <stdlib.h>
 
-/* Code points that steer a terminal or reorder the text after them: the C1
- * controls and Unicode's Bidi_Control set. sprat-lib escapes the same ones in
- * its error messages. */
-static int is_invisible_control(unsigned cp) {
-    return (cp >= 0x80 && cp <= 0x9F) || cp == 0x061C || cp == 0x200E || cp == 0x200F
-        || (cp >= 0x202A && cp <= 0x202E) || (cp >= 0x2066 && cp <= 0x2069);
-}
-
-/* Names and paths come from the file, so control characters are escaped rather
- * than handed to the terminal. The loader checked that strings are valid UTF-8,
- * so a lead byte's continuation bytes are there to decode. */
+/* Names and paths come from the file, so they are escaped rather than handed
+ * to the terminal as is. */
 static void print_text(const char* text) {
-    const unsigned char* s = (const unsigned char*)text;
-    while (*s != '\0') {
-        size_t len = *s < 0x80 ? 1 : *s < 0xE0 ? 2 : *s < 0xF0 ? 3 : 4;
-        unsigned cp = len == 1 ? *s : *s & (0xFFu >> (len + 1)); /* the lead byte's payload */
-        for (size_t i = 1; i < len; ++i) cp = (cp << 6) | (s[i] & 0x3Fu);
-        if (cp < 0x20 || cp == 0x7F) {
-            printf("\\x%02X", cp);
-        } else if (is_invisible_control(cp)) {
-            printf("\\u%04X", cp);
-        } else {
-            fwrite(s, 1, len, stdout);
-        }
-        s += len;
-    }
+    size_t len = sprat_escape(NULL, 0, text);
+    char* escaped = malloc(len + 1);
+    if (escaped == NULL) return;
+    sprat_escape(escaped, len + 1, text);
+    fputs(escaped, stdout);
+    free(escaped);
 }
 
 static const char* marker_type_name(sprat_marker_type type) {

@@ -46,6 +46,39 @@ void sprat_reader_locate(const sprat_reader* r, size_t pos, size_t* line, size_t
     *column = c + 1;
 }
 
+/* Writes the escaped form of the character at text[i] to piece and returns its
+ * length; *used is how many bytes of text it stands for. */
+static size_t escape_piece(const char* text, size_t len, size_t i, bool escape_quote, char piece[12], size_t* used) {
+    unsigned char c = (unsigned char)text[i];
+    *used = 1;
+    if ((c == '"' && escape_quote) || c == '\\') {
+        piece[0] = '\\';
+        piece[1] = (char)c;
+        return 2;
+    }
+    if (c == '\n') {
+        memcpy(piece, "\\n", 2);
+        return 2;
+    }
+    if (c < 0x80 && c >= 0x20 && c != 0x7F) {
+        piece[0] = (char)c;
+        return 1;
+    }
+    size_t m = c < 0x80 ? 0 : utf8_sequence_length((const unsigned char*)text + i, len - i);
+    if (m == 0) {
+        snprintf(piece, 12, "\\x%02X", c); /* control or invalid byte */
+        return 4;
+    }
+    *used = m;
+    unsigned cp = decode_utf8((const unsigned char*)text + i, m);
+    if (is_invisible_control(cp)) {
+        snprintf(piece, 12, "\\u%04X", cp);
+        return 6;
+    }
+    memcpy(piece, text + i, m);
+    return m;
+}
+
 void sprat_quote(char* out, size_t size, const char* text, size_t len) {
     if (size < 8) {
         if (size > 0) out[0] = '\0';
@@ -56,35 +89,9 @@ void sprat_quote(char* out, size_t size, const char* text, size_t len) {
     size_t n = 0;
     out[n++] = '"';
     for (size_t i = 0; i < len;) {
-        unsigned char c = (unsigned char)text[i];
         char piece[12];
-        size_t piece_len = 1;
-        size_t used = 1;
-        if (c == '"' || c == '\\') {
-            piece[0] = '\\';
-            piece[1] = (char)c;
-            piece_len = 2;
-        } else if (c == '\n') {
-            memcpy(piece, "\\n", 2);
-            piece_len = 2;
-        } else if (c < 0x80 && c >= 0x20 && c != 0x7F) {
-            piece[0] = (char)c;
-        } else {
-            size_t m = c < 0x80 ? 0 : utf8_sequence_length((const unsigned char*)text + i, len - i);
-            unsigned cp = m == 0 ? 0 : decode_utf8((const unsigned char*)text + i, m);
-            if (m == 0) {
-                snprintf(piece, sizeof(piece), "\\x%02X", c); /* control or invalid byte */
-                piece_len = 4;
-            } else if (is_invisible_control(cp)) {
-                snprintf(piece, sizeof(piece), "\\u%04X", cp);
-                piece_len = 6;
-                used = m;
-            } else {
-                memcpy(piece, text + i, m);
-                piece_len = m;
-                used = m;
-            }
-        }
+        size_t used;
+        size_t piece_len = escape_piece(text, len, i, true, piece, &used);
         if (n + piece_len > limit) {
             memcpy(out + n, "...", 3);
             n += 3;
@@ -96,6 +103,27 @@ void sprat_quote(char* out, size_t size, const char* text, size_t len) {
     }
     out[n++] = '"';
     out[n] = '\0';
+}
+
+size_t sprat_escape(char* out, size_t size, const char* text) {
+    if (out == NULL) size = 0;
+    size_t len = text == NULL ? 0 : strlen(text);
+    size_t written = 0;
+    size_t total = 0;
+    for (size_t i = 0; i < len;) {
+        char piece[12];
+        size_t used;
+        size_t piece_len = escape_piece(text, len, i, false, piece, &used);
+        /* Once a piece doesn't fit, later ones are only counted. */
+        if (written == total && piece_len < size - written) {
+            memcpy(out + written, piece, piece_len);
+            written += piece_len;
+        }
+        total += piece_len;
+        i += used;
+    }
+    if (size > 0) out[written] = '\0';
+    return total;
 }
 
 /* Fails with "<what>, found <the token at pos>", or "... found the end of the
