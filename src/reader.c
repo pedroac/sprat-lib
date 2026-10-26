@@ -24,9 +24,9 @@ static unsigned decode_utf8(const unsigned char* s, size_t len) {
 
 /* Code points that change how a terminal or a text view shows what follows:
  * the C1 controls (U+009B is an escape sequence's start on some terminals)
- * and the marks and overrides of bidirectional text. */
+ * and Unicode's Bidi_Control set, the marks and overrides of bidirectional text. */
 static bool is_invisible_control(unsigned cp) {
-    return (cp >= 0x80 && cp <= 0x9F) || cp == 0x200E || cp == 0x200F
+    return (cp >= 0x80 && cp <= 0x9F) || cp == 0x061C || cp == 0x200E || cp == 0x200F
         || (cp >= 0x202A && cp <= 0x202E) || (cp >= 0x2066 && cp <= 0x2069);
 }
 

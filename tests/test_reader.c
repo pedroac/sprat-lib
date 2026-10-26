@@ -363,6 +363,9 @@ static void test_quote(void) {
                 "\xE2\x80\x8E\xE2\x80\x8F\xE2\x80\xAA\xE2\x80\xAE\xE2\x81\xA6\xE2\x81\xA9"
                 "\xE2\x80\x8D\xE2\x81\xAA", 24);
     CHECK_STR(out, "\"\\u200E\\u200F\\u202A\\u202E\\u2066\\u2069\xE2\x80\x8D\xE2\x81\xAA\"");
+    /* U+061C ARABIC LETTER MARK is a bidirectional mark too; U+061B next to it is not. */
+    sprat_quote(out, sizeof(out), "\xD8\x9C\xD8\x9B", 4);
+    CHECK_STR(out, "\"\\u061C\xD8\x9B\"");
     /* An escape is never cut in half either. */
     sprat_quote(out, 12, "abcd\xE2\x80\xAE", 7);
     CHECK_STR(out, "\"abcd...\"");

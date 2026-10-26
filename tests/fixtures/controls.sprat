@@ -1,0 +1,8 @@
+sprat-raw 1
+sheet 1 0 0 0 1 5 0 0 0 0 165 0: 0:
+atlas 16 16 9:atlas.png 0: 0:
+sprite 0 0 0 4 4 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 11:rlo_‮evil 21:names/rlo_‮evil.png 0:
+sprite 0 4 0 4 4 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 10:alm_؜mark 20:names/alm_؜mark.png 0:
+sprite 0 8 0 4 4 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 14:rli_⁧isolate 24:names/rli_⁧isolate.png 0:
+sprite 0 12 0 4 4 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 7:c1_2J 17:names/c1_2J.png 0:
+sprite 0 0 4 4 4 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 11:plain_été 21:names/plain_été.png 0:

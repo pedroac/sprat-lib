@@ -301,7 +301,7 @@ SPRAT_API sprat_size sprat_sprite_source_size(const sprat_sprite* sprite);
  * colon), no ".." component (either separator), no control characters, and
  * nothing Windows would reinterpret: no component made only of dots and spaces
  * other than ".", and no device name such as CON, NUL or COM1 (any case, with
- * or without an extension).
+ * or without an extension, and COM/LPT with a superscript 1, 2 or 3 too).
  * The loader keeps paths as written, since a trusted pipeline may use absolute
  * ones; check atlas and image paths with this before opening them when the
  * sheet comes from an untrusted source. */

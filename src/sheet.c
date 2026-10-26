@@ -1128,8 +1128,18 @@ static bool equals_upper(const char* s, size_t n, const char* word) {
     return i == n && word[i] == '\0';
 }
 
+/* COM and LPT take a digit, which Windows also accepts as a superscript:
+ * U+00B9, U+00B2 and U+00B3, encoded C2 B9, C2 B2 and C2 B3. */
+static bool is_port_digit(const char* s, size_t n) {
+    if (n == 1) return s[0] >= '0' && s[0] <= '9';
+    if (n != 2 || (unsigned char)s[0] != 0xC2) return false;
+    unsigned char b = (unsigned char)s[1];
+    return b == 0xB9 || b == 0xB2 || b == 0xB3;
+}
+
 /* Windows opens a device, not a file, for these names in any folder and with
- * any extension: "nul.png" and "a/CON" are both devices. */
+ * any extension: "nul.png", "a/CON" and "COM1.png" (with a superscript 1) are
+ * all devices. */
 static bool is_windows_device(const char* component, size_t len) {
     static const char* const k_devices[] = {"CON", "PRN", "AUX", "NUL", "CONIN$", "CONOUT$"};
     size_t n = 0;
@@ -1138,8 +1148,8 @@ static bool is_windows_device(const char* component, size_t len) {
     for (size_t i = 0; i < sizeof(k_devices) / sizeof(k_devices[0]); ++i) {
         if (equals_upper(component, n, k_devices[i])) return true;
     }
-    return n == 4 && (equals_upper(component, 3, "COM") || equals_upper(component, 3, "LPT"))
-        && component[3] >= '0' && component[3] <= '9';
+    return n > 3 && (equals_upper(component, 3, "COM") || equals_upper(component, 3, "LPT"))
+        && is_port_digit(component + 3, n - 3);
 }
 
 /* Windows drops trailing dots and spaces from names, so a component made only

@@ -7,22 +7,31 @@
 
 #include <stdio.h>
 
+/* Code points that steer a terminal or reorder the text after them: the C1
+ * controls and Unicode's Bidi_Control set. sprat-lib escapes the same ones in
+ * its error messages. */
+static int is_invisible_control(unsigned cp) {
+    return (cp >= 0x80 && cp <= 0x9F) || cp == 0x061C || cp == 0x200E || cp == 0x200F
+        || (cp >= 0x202A && cp <= 0x202E) || (cp >= 0x2066 && cp <= 0x2069);
+}
+
 /* Names and paths come from the file, so control characters are escaped rather
- * than handed to the terminal. Strings are valid UTF-8, so the only multi-byte
- * controls are C1 (U+0080..U+009F, encoded C2 80..C2 9F). */
+ * than handed to the terminal. The loader checked that strings are valid UTF-8,
+ * so a lead byte's continuation bytes are there to decode. */
 static void print_text(const char* text) {
     const unsigned char* s = (const unsigned char*)text;
     while (*s != '\0') {
-        if (*s < 0x20 || *s == 0x7F) {
-            printf("\\x%02X", *s);
-            s += 1;
-        } else if (*s == 0xC2 && s[1] >= 0x80 && s[1] <= 0x9F) {
-            printf("\\u%04X", s[1]);
-            s += 2;
+        size_t len = *s < 0x80 ? 1 : *s < 0xE0 ? 2 : *s < 0xF0 ? 3 : 4;
+        unsigned cp = len == 1 ? *s : *s & (0xFFu >> (len + 1)); /* the lead byte's payload */
+        for (size_t i = 1; i < len; ++i) cp = (cp << 6) | (s[i] & 0x3Fu);
+        if (cp < 0x20 || cp == 0x7F) {
+            printf("\\x%02X", cp);
+        } else if (is_invisible_control(cp)) {
+            printf("\\u%04X", cp);
         } else {
-            putchar(*s);
-            s += 1;
+            fwrite(s, 1, len, stdout);
         }
+        s += len;
     }
 }
 

@@ -34,6 +34,10 @@ if(TARGET sprat-dump)
     add_test(NAME sprat_dump COMMAND sprat-dump ${CMAKE_CURRENT_SOURCE_DIR}/fixtures/multipack.sprat)
     set_tests_properties(sprat_dump PROPERTIES PASS_REGULAR_EXPRESSION
         "sprite 3: run_03 \\[atlas 0\\] 0,0 16x32 source 19x35 pivot 4,8 alias of hero/run_01.png")
+    # Names with C1 controls and bidirectional marks are printed escaped, other UTF-8 as is.
+    add_test(NAME sprat_dump_controls COMMAND sprat-dump ${CMAKE_CURRENT_SOURCE_DIR}/fixtures/controls.sprat)
+    set_tests_properties(sprat_dump_controls PROPERTIES PASS_REGULAR_EXPRESSION
+        "rlo_\\\\u202Eevil .*alm_\\\\u061Cmark .*rli_\\\\u2067isolate .*c1_\\\\u009B2J .*plain_été ")
     add_test(NAME sprat_dump_error COMMAND sprat-dump ${CMAKE_CURRENT_SOURCE_DIR}/fixtures/README.md)
     set_tests_properties(sprat_dump_error PROPERTIES WILL_FAIL TRUE)
     add_test(NAME sprat_dump_usage COMMAND sprat-dump)

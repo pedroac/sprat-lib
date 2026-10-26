@@ -139,6 +139,8 @@ static void test_path_is_safe(void) {
         "atlas.png", "a/b.png", "a\\b.png", "./x.png", "..a/b", "a..b/c..", ".hidden",
         "console.png", "com10.png", "comx.png", "nullable/a.png", "a b/c d.png", "a//b.png",
         "\xC3\xA9t\xC3\xA9.png", "lpt.png", "con_x", "dir/", "lptx.png", "COMa", "AUXI",
+        /* Superscripts other than 1, 2 and 3 (U+2074 is 4), or two of them, are not ports. */
+        "COM\xE2\x81\xB4.png", "com\xC2\xB9\xC2\xB9", "lpt\xC2\xBA", "COM\xC2\xB9x",
     };
     for (size_t i = 0; i < sizeof(k_safe) / sizeof(k_safe[0]); ++i) {
         if (!sprat_path_is_safe(k_safe[i])) FAIL_AT("\"%s\" should be safe", k_safe[i]);
@@ -150,6 +152,8 @@ static void test_path_is_safe(void) {
         /* Windows trims trailing dots and spaces, and opens devices by name. */
         ".. ", ".. /x.png", "...", "a/. ./x.png", " ", "CON", "nul.png", "a/Aux.txt",
         "COM1.png", "com0", "lpt9", "con .png", "conout$", "CONIN$.txt", "prn/x.png",
+        /* Superscript 1, 2 and 3 (U+00B9, U+00B2, U+00B3) name ports too. */
+        "COM\xC2\xB9.png", "lpt\xC2\xB2", "a/Com\xC2\xB3 .txt", "LPT\xC2\xB9",
     };
     for (size_t i = 0; i < sizeof(k_unsafe) / sizeof(k_unsafe[0]); ++i) {
         if (sprat_path_is_safe(k_unsafe[i])) FAIL_AT("\"%s\" should be unsafe", k_unsafe[i]);

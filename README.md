@@ -290,9 +290,9 @@ the sheet line are named `sheet.<field>`, and its totals `sheet.marker_total`,
 path and give the C library's reason.
 
 Messages quote text from the file safely: control characters, invalid bytes,
-C1 controls such as U+009B and bidirectional overrides such as U+202E are
-escaped (`\x1B`, `\u202E`), so a hostile sheet cannot slip terminal escape
-sequences or reordered text into your logs.
+C1 controls such as U+009B and bidirectional marks and overrides such as
+U+061C and U+202E are escaped (`\x1B`, `\u202E`), so a hostile sheet cannot
+slip terminal escape sequences or reordered text into your logs.
 
 The loader validates everything code using a sheet would otherwise have to
 check, so a loaded sheet can be used without further checks:
@@ -323,7 +323,7 @@ When a sheet comes from an untrusted source, check each atlas or image path with
 `sprat_path_is_safe()` before opening it: it accepts only relative paths with no
 `..` component, drive, colon or control character, and nothing Windows would
 reinterpret (a component of only dots and spaces, or a device name such as
-`CON` or `nul.png`).
+`CON`, `nul.png` or `COM¹.png`, with a superscript digit).
 
 ## File format
 
