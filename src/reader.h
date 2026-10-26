@@ -37,8 +37,7 @@ void sprat_reader_locate(const sprat_reader* r, size_t pos, size_t* line, size_t
 
 /* Writes up to `size` bytes (NUL included) of a quoted copy of text[0..len)
  * for an error message, safe to print: '"', '\\', control characters and
- * invalid bytes escaped (\x1B), C1 controls and bidirectional overrides too
- * (\u009B, \u202E), and "..." when cut short. */
+ * invalid bytes escaped as sprat_escape() does, and "..." when cut short. */
 void sprat_quote(char* out, size_t size, const char* text, size_t len);
 
 #endif /* SPRAT_READER_H */

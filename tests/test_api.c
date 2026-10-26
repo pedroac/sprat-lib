@@ -161,6 +161,37 @@ static void test_path_is_safe(void) {
     CHECK(!sprat_path_is_safe(NULL));
 }
 
+static void test_escape(void) {
+    char out[64];
+    /* Plain text and other UTF-8 are copied; quotes are kept, backslashes doubled. */
+    CHECK_SIZE(sprat_escape(out, sizeof(out), "hero/\xC3\xA9t\xC3\xA9 \"run\".png"), 20);
+    CHECK_STR(out, "hero/\xC3\xA9t\xC3\xA9 \"run\".png");
+    CHECK_SIZE(sprat_escape(out, sizeof(out), "a\\b"), 4);
+    CHECK_STR(out, "a\\\\b");
+    /* Controls, bytes that are not UTF-8, C1 controls and every Bidi_Control. */
+    sprat_escape(out, sizeof(out), "\x1B[2J\n\t\x7F\xFF\xC2\x9B");
+    CHECK_STR(out, "\\x1B[2J\\n\\x09\\x7F\\xFF\\u009B");
+    sprat_escape(out, sizeof(out),
+                 "\xD8\x9C\xE2\x80\x8E\xE2\x80\x8F\xE2\x80\xAA\xE2\x80\xAE\xE2\x81\xA6\xE2\x81\xA9");
+    CHECK_STR(out, "\\u061C\\u200E\\u200F\\u202A\\u202E\\u2066\\u2069");
+    /* Measuring first, like snprintf. */
+    CHECK_SIZE(sprat_escape(NULL, 0, "ab\xE2\x80\xAE"), 8);
+    CHECK_SIZE(sprat_escape(out, 0, "ab"), 2);
+    CHECK_SIZE(sprat_escape(out, sizeof(out), NULL), 0);
+    CHECK_STR(out, "");
+    /* Cut short: never inside an escape or a character, nor resumed after. */
+    CHECK_SIZE(sprat_escape(out, 9, "ab\xE2\x80\xAE"), 8);
+    CHECK_STR(out, "ab\\u202E");
+    CHECK_SIZE(sprat_escape(out, 8, "ab\xE2\x80\xAE"), 8);
+    CHECK_STR(out, "ab");
+    CHECK_SIZE(sprat_escape(out, 5, "a\xE2\x80\xAE" "b"), 8);
+    CHECK_STR(out, "a");
+    CHECK_SIZE(sprat_escape(out, 3, "\xC3\xA9\xC3\xA9"), 4);
+    CHECK_STR(out, "\xC3\xA9");
+    CHECK_SIZE(sprat_escape(out, 1, "a"), 1);
+    CHECK_STR(out, "");
+}
+
 static void test_status_string(void) {
     CHECK_STR(sprat_status_string(SPRAT_OK), "ok");
     CHECK_STR(sprat_status_string(SPRAT_ERR_INVALID_ARG), "invalid argument");
@@ -241,6 +272,7 @@ int main(void) {
     RUN(test_sizes);
     RUN(test_source_size_clamps);
     RUN(test_path_is_safe);
+    RUN(test_escape);
     RUN(test_status_string);
     RUN(test_version);
     RUN(test_memory_functions);
